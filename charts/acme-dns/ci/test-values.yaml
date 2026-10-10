@@ -1,0 +1,13 @@
+# Synthetic configuration for chart validation; never used to publish an image.
+image:
+  repository: example/acme-dns
+cloudflare:
+  existingSecret: dns-api-test
+config:
+  zoneId: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  zoneName: example.com
+  clients:
+    - id: site-a
+      recordName: _acme-challenge.site-a.example.com
+      tokenSha256:
+        - bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb

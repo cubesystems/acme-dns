@@ -1,0 +1,16 @@
+/target/
+/.cargo-cache/
+/dist/
+.env
+.env.*
+*.token
+*.secrets.json
+clients.json
+values.local.yaml
+__pycache__/
+# Leftover local dependencies from the discarded prototypes.
+/node_modules/
+/vendor/
+/.phpunit.cache/
+/.wrangler/
+/test-results.xml

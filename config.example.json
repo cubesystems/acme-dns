@@ -1,0 +1,11 @@
+{
+  "zoneId": "00000000000000000000000000000000",
+  "zoneName": "example.com",
+  "clients": [
+    {
+      "id": "site-a",
+      "recordName": "_acme-challenge.site-a.example.com",
+      "tokenSha256": ["0000000000000000000000000000000000000000000000000000000000000000"]
+    }
+  ]
+}

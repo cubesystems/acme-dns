@@ -1,0 +1,11 @@
+{{- if not .Values.config.existingConfigMap }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "acme-dns.fullname" . }}
+  labels:
+    {{- include "acme-dns.labels" . | nindent 4 }}
+data:
+  clients.json: |
+    {{- dict "zoneId" (required "config.zoneId is required" .Values.config.zoneId) "zoneName" (required "config.zoneName is required" .Values.config.zoneName) "clients" .Values.config.clients | mustToPrettyJson | nindent 4 }}
+{{- end }}
