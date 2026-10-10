@@ -2,8 +2,19 @@ apiVersion: v1
 entries:
   acme-dns:
   - apiVersion: v2
+    appVersion: v0.1.0
+    created: "2026-10-10T23:00:05.799216+03:00"
+    description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
+    digest: 30d48444fabe55ff29f7264d587f4238cc053e4d5202f577391d958b8853ddd4
+    kubeVersion: '>=1.25.0-0'
+    name: acme-dns
+    type: application
+    urls:
+    - https://cubesystems.github.io/acme-dns/packages/acme-dns-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-10-10T21:18:51.229928+03:00"
+    created: "2026-10-10T23:00:05.799018+03:00"
     description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
     digest: a73311e9493c5405c500def621df84ad3e3c9f8aecb54106bceff308f7685fed
     kubeVersion: '>=1.25.0-0'
@@ -12,4 +23,4 @@ entries:
     urls:
     - https://cubesystems.github.io/acme-dns/packages/acme-dns-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-10T21:18:51.229284+03:00"
+generated: "2026-10-10T23:00:05.794964+03:00"

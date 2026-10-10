@@ -1,5 +1,6 @@
 """Check chart wiring without a Kubernetes cluster. Requires Helm and PyYAML."""
 
+import base64
 import json
 import subprocess
 import unittest
@@ -63,6 +64,22 @@ class ChartTests(unittest.TestCase):
         self.assertEqual(env["CF_DNS_API_TOKEN"]["valueFrom"]["secretKeyRef"], {
             "name": "external-token", "key": "token",
         })
+
+    def test_managed_secret_matches_reference_and_rotates_pod(self):
+        field = "secrets.dns-api-test.data.CF_DNS_API_TOKEN"
+        docs = render(f"{field}=fake-test-token")
+        secret = docs["Secret"]
+        self.assertEqual(secret["metadata"]["name"], "dns-api-test")
+        self.assertEqual(secret["type"], "Opaque")
+        self.assertEqual(base64.b64decode(secret["data"]["CF_DNS_API_TOKEN"]), b"fake-test-token")
+        before = docs["Deployment"]["spec"]["template"]["metadata"]["annotations"]
+        after = render(f"{field}=rotated-test-token")["Deployment"]["spec"]["template"]["metadata"]["annotations"]
+        self.assertNotEqual(before["checksum/secrets"], after["checksum/secrets"])
+        self.assertEqual(before["checksum/config"], after["checksum/config"])
+
+    def test_encrypted_secret_requires_k8s_tools_decryption(self):
+        error = render("secrets.dns-api-test.data.CF_DNS_API_TOKEN=HELM_SECRET:fake", success=False)
+        self.assertIn("must be decrypted by k8s-tools", error)
 
     def test_ingress_targets_service_with_custom_name(self):
         docs = render("ingress.enabled=true", "ingress.host=dns.example.com",

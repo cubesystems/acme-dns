@@ -12,6 +12,11 @@ cloudflare:
   existingSecret: ""
   secretKey: CF_DNS_API_TOKEN
 
+# Optional chart-managed Secrets, named to match cloudflare.existingSecret.
+# k8s-tools decrypts secrets.<name>.data values before Helm renders this chart.
+# Commit only encrypted values; keep the encryption key outside Git.
+secrets: {}
+
 config:
   # Alternatively, reference a ConfigMap containing a clients.json key.
   existingConfigMap: ""
