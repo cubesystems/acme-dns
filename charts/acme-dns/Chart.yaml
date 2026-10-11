@@ -2,6 +2,6 @@ apiVersion: v2
 name: acme-dns
 description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
 type: application
-version: 0.1.2
-appVersion: "v0.1.0"
+version: 1.0.0
+appVersion: "v1.0.0"
 kubeVersion: ">=1.25.0-0"

@@ -19,7 +19,7 @@ Pushes and pull requests run Rust, container and Helm checks. Successful pushes 
 | Branch `master` | `master` |
 | Branch `feature/example` | `feature-example` |
 | Tag `preview` | `preview` |
-| Tag `v0.1.0` | `v0.1.0` |
+| Tag `v1.0.0` | `v1.0.0` |
 
 Only branch and Git tag names are published. Branch tags update on each successful push. Avoid names that become identical when `/` is replaced by `-`.
 

@@ -27,7 +27,7 @@ docker run -d --name acme-dns \
   --publish 80:8080 \
   --mount type=bind,src=/secure/path/clients.json,dst=/config/clients.json,readonly \
   --env CF_DNS_API_TOKEN \
-  cubesystems/acme-dns:v0.1.0
+  cubesystems/acme-dns:v1.0.0
 ```
 
 Optional environment overrides: `CLIENT_CONFIG_FILE` (default `/config/clients.json`) and `LISTEN_ADDR` (default `0.0.0.0:8080`). For Cloudflare proxying to an HTTP origin, use [Flexible mode](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/) for this hostname only.
@@ -38,7 +38,7 @@ In namespace `dns`, create Secret `cloudflare-dns` with key `CF_DNS_API_TOKEN` c
 
 ```yaml
 image:
-  tag: "v0.1.0"
+  tag: "v1.0.0"
 cloudflare:
   existingSecret: cloudflare-dns
 config:
