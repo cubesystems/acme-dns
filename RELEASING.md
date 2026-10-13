@@ -19,7 +19,7 @@ Pushes and pull requests run Rust, container and Helm checks. Successful pushes 
 | Branch `master` | `master` |
 | Branch `feature/example` | `feature-example` |
 | Tag `preview` | `preview` |
-| Tag `v1.0.0` | `v1.0.0` |
+| Tag `v1.1.0` | `v1.1.0` |
 
 Only branch and Git tag names are published. Branch tags update on each successful push. Avoid names that become identical when `/` is replaced by `-`.
 
@@ -31,11 +31,12 @@ Once, enable **GitHub Settings → Pages → Deploy from a branch → master →
 
 From the repository root:
 
-1. Bump `version` in `charts/acme-dns/Chart.yaml`. Change `appVersion` only to change the default image tag.
+1. Bump `version` in the changed chart's `Chart.yaml`. The server chart is `charts/acme-dns`; the client chart is `charts/acme-dns-client`. Change the server chart's `appVersion` only to change its default image tag. The client chart requires an explicit image tag or digest containing `--client-mode`.
 2. Package:
 
    ```sh
    helm package charts/acme-dns --destination packages
+   helm package charts/acme-dns-client --destination packages
    ```
 
 3. Reindex:
@@ -47,3 +48,5 @@ From the repository root:
 4. Commit and push the chart, new package and `index.yaml` to `master`. Keep older packages.
 
 GitHub Pages serves `https://cubesystems.github.io/acme-dns/`. CI checks charts but does not publish them.
+
+Both charts use the same `cubesystems/acme-dns` image. Client mode is part of the normal Rust binary and Docker build; it has no separate image or release pipeline. Publish an image containing client mode before distributing the client chart for deployment.

@@ -1,0 +1,47 @@
+image:
+  repository: cubesystems/acme-dns
+  # Required unless digest is set. Select v1.1.0 or later for --client-mode.
+  tag: ""
+  digest: ""
+  pullPolicy: IfNotPresent
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Existing acme-dns server base URL. Client mode appends /v1/challenges.
+# HTTPS is required. Credentials belong in the cert-manager account Secret.
+serverUrl: ""
+
+service:
+  port: 80
+
+# Optional ClusterIssuer. Keep disabled when another release or manifest owns
+# the issuer, then add the acmeDNS solver shown in README.md to that issuer.
+issuer:
+  enabled: false
+  name: letsencrypt-acme-dns
+  email: ""
+  server: https://acme-v02.api.letsencrypt.org/directory
+  # Empty uses <issuer.name>-account for the Let's Encrypt account key.
+  privateKeySecretName: ""
+  dnsNames: []
+  accountSecretRef:
+    name: ""
+    key: acmedns.json
+  additionalSolvers: []
+
+# Optional chart-managed Secrets; supports k8s-tools secrets.<name>.data.
+# Install in cert-manager's cluster resource namespace (normally cert-manager)
+# when managing its account Secret. Commit only encrypted values.
+secrets: {}
+
+podAnnotations: {}
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    memory: 128Mi
+nodeSelector: {}
+tolerations: []
+affinity: {}

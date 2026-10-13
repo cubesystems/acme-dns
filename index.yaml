@@ -2,8 +2,19 @@ apiVersion: v1
 entries:
   acme-dns:
   - apiVersion: v2
+    appVersion: v1.1.0
+    created: "2026-10-13T23:48:20.897246+03:00"
+    description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
+    digest: d1711a12fe0728df643e912ba0bd56494b6dbf59a8df44393164c711290fa88a
+    kubeVersion: '>=1.25.0-0'
+    name: acme-dns
+    type: application
+    urls:
+    - https://cubesystems.github.io/acme-dns/packages/acme-dns-1.0.1.tgz
+    version: 1.0.1
+  - apiVersion: v2
     appVersion: v1.0.0
-    created: "2026-10-11T22:07:17.428598+03:00"
+    created: "2026-10-13T23:48:20.897122+03:00"
     description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
     digest: 65a31b785c2d3296e516744d004c052efea105ebf1acef971ac857b5552285ab
     kubeVersion: '>=1.25.0-0'
@@ -14,7 +25,7 @@ entries:
     version: 1.0.0
   - apiVersion: v2
     appVersion: v0.1.0
-    created: "2026-10-11T22:07:17.428229+03:00"
+    created: "2026-10-13T23:48:20.896858+03:00"
     description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
     digest: 30d48444fabe55ff29f7264d587f4238cc053e4d5202f577391d958b8853ddd4
     kubeVersion: '>=1.25.0-0'
@@ -25,7 +36,7 @@ entries:
     version: 0.1.2
   - apiVersion: v2
     appVersion: 0.1.0
-    created: "2026-10-11T22:07:17.427988+03:00"
+    created: "2026-10-13T23:48:20.896546+03:00"
     description: A small HTTP API for per-client Cloudflare DNS-01 TXT upserts
     digest: a73311e9493c5405c500def621df84ad3e3c9f8aecb54106bceff308f7685fed
     kubeVersion: '>=1.25.0-0'
@@ -34,4 +45,16 @@ entries:
     urls:
     - https://cubesystems.github.io/acme-dns/packages/acme-dns-0.1.0.tgz
     version: 0.1.0
-generated: "2026-10-11T22:07:17.427563+03:00"
+  acme-dns-client:
+  - apiVersion: v2
+    created: "2026-10-13T23:48:20.897383+03:00"
+    description: Use an existing acme-dns server with cert-manager through the same
+      image in client mode
+    digest: 612a70ff3d7578046201e047a23cc2f9b1f9027b713e67e17d51bd395b437190
+    kubeVersion: '>=1.25.0-0'
+    name: acme-dns-client
+    type: application
+    urls:
+    - https://cubesystems.github.io/acme-dns/packages/acme-dns-client-1.0.0.tgz
+    version: 1.0.0
+generated: "2026-10-13T23:48:20.896212+03:00"

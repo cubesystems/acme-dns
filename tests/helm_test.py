@@ -9,11 +9,14 @@ import yaml
 CHART = "charts/acme-dns"
 
 
-def render(*overrides, success=True):
-    command = ["helm", "template", "demo", CHART, "-f", f"{CHART}/ci/test-values.yaml"]
+def render(*overrides, success=True, chart=CHART, values=None):
+    command = ["helm", "template", "demo", chart, "--namespace", "cert-manager", "-f", f"{chart}/ci/test-values.yaml"]
     for override in overrides:
         command.extend(["--set-string", override])
-    result = subprocess.run(command, capture_output=True, text=True)
+    if values is not None:
+        command.extend(["-f", "-"])
+    result = subprocess.run(command, input=json.dumps(values) if values is not None else None,
+                            capture_output=True, text=True)
     if not success:
         assert result.returncode != 0, "Expected invalid chart values to fail"
         return result.stderr
@@ -106,6 +109,71 @@ class ChartTests(unittest.TestCase):
         ]:
             with self.subTest(value=value):
                 self.assertIn(message, render(value, success=False))
+
+
+class ClientChartTests(unittest.TestCase):
+    def render(self, *overrides, **kwargs):
+        return render(*overrides, chart="charts/acme-dns-client", **kwargs)
+
+    def test_same_image_in_client_mode_without_cloudflare_or_kubernetes_credentials(self):
+        docs = self.render()
+        self.assertEqual(set(docs), {"Deployment", "Service"})
+        pod = docs["Deployment"]["spec"]["template"]["spec"]
+        container = pod["containers"][0]
+        self.assertEqual(container["image"], "cubesystems/acme-dns:test-client-mode")
+        self.assertEqual(container["args"], ["--client-mode"])
+        self.assertEqual({e["name"]: e["value"] for e in container["env"]}, {
+            "LISTEN_ADDR": "0.0.0.0:8080", "ACME_DNS_SERVER_URL": "https://acme.example.com",
+        })
+        self.assertFalse(pod["automountServiceAccountToken"])
+        self.assertNotIn("volumes", pod)
+        self.assertTrue(container["securityContext"]["readOnlyRootFilesystem"])
+        self.assertTrue(pod["securityContext"]["runAsNonRoot"])
+        self.assertEqual(docs["Service"]["spec"]["type"], "ClusterIP")
+        self.assertEqual(docs["Service"]["spec"]["selector"], docs["Deployment"]["spec"]["selector"]["matchLabels"])
+        self.assertEqual(container["readinessProbe"]["httpGet"], {"path": "/healthz", "port": "http"})
+
+    def test_optional_issuer_points_to_this_service_and_account_secret(self):
+        docs = self.render("issuer.enabled=true", "issuer.email=admin@example.com",
+                           "issuer.dnsNames[0]=site-a.example.com", "issuer.accountSecretRef.name=client-keys",
+                           "issuer.additionalSolvers[0].http01.ingress.class=public",
+                           "fullnameOverride=shared-client", "service.port=8081")
+        acme = docs["ClusterIssuer"]["spec"]["acme"]
+        self.assertEqual(acme["privateKeySecretRef"]["name"], "letsencrypt-acme-dns-account")
+        self.assertEqual(acme["solvers"], [
+            {"selector": {"dnsNames": ["site-a.example.com"]}, "dns01": {"acmeDNS": {
+                "host": "http://shared-client.cert-manager.svc:8081",
+                "accountSecretRef": {"name": "client-keys", "key": "acmedns.json"},
+            }}},
+            {"http01": {"ingress": {"class": "public"}}},
+        ])
+
+    def test_secrets_support_k8s_tools_and_are_not_mounted_in_client(self):
+        field = r"secrets.client-keys.data.acmedns\.json"
+        account_json = '{"site-a.example.com":{"password":"fake"}}'
+        docs = self.render(values={"secrets": {"client-keys": {"data": {"acmedns.json": account_json}}}})
+        self.assertEqual(base64.b64decode(docs["Secret"]["data"]["acmedns.json"]).decode(), account_json)
+        self.assertNotIn("volumes", docs["Deployment"]["spec"]["template"]["spec"])
+        self.assertIn("must be decrypted by k8s-tools", self.render(f"{field}=HELM_SECRET:fake", success=False))
+
+    def test_digest_and_upstream_configuration(self):
+        digest = "sha256:" + "a" * 64
+        docs = self.render(f"image.digest={digest}", "image.tag=", "serverUrl=https://other.example/base")
+        container = docs["Deployment"]["spec"]["template"]["spec"]["containers"][0]
+        self.assertEqual(container["image"], f"cubesystems/acme-dns@{digest}")
+        self.assertEqual(container["env"][1]["value"], "https://other.example/base")
+
+    def test_invalid_configuration_fails_rendering(self):
+        for value, message in [
+            ("serverUrl=", "serverUrl is required"),
+            ("serverUrl=http://acme.example.com", "serverUrl must be HTTPS"),
+            ("serverUrl=https://user:secret@acme.example.com", "serverUrl must be HTTPS"),
+            ("image.repository=", "image.repository is required"),
+            ("image.tag=", "image.tag or image.digest is required"),
+            ("issuer.enabled=true", "issuer.email is required"),
+        ]:
+            with self.subTest(value=value):
+                self.assertIn(message, self.render(value, success=False))
 
 
 if __name__ == "__main__":

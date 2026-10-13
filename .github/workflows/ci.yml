@@ -46,6 +46,7 @@ jobs:
       - name: Check chart
         run: |
           helm lint charts/acme-dns --strict -f charts/acme-dns/ci/test-values.yaml
+          helm lint charts/acme-dns-client --strict -f charts/acme-dns-client/ci/test-values.yaml
           python3 tests/helm_test.py
 
   publish_image:

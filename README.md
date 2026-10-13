@@ -2,7 +2,7 @@
 
 Servers behind firewalls still need automatic HTTPS certificates. DNS-01 validation allows this without inbound access, but giving every server a Cloudflare DNS token puts the whole zone at risk. `acme-dns` holds that token centrally and limits each client's API key to one challenge TXT record.
 
-Certbot sends a value; the service creates or updates the TXT record. Certificates and private keys stay with Certbot. The last TXT value remains until the next challenge.
+Certbot or cert-manager sends a value; the service creates or updates the TXT record. Certificates and private keys stay with the ACME client. The last TXT value remains until the next challenge.
 
 Run **one container and one validation at a time per DNS name**. The service serves HTTP on port 8080; terminate HTTPS at your ingress or proxy.
 
@@ -27,7 +27,7 @@ docker run -d --name acme-dns \
   --publish 80:8080 \
   --mount type=bind,src=/secure/path/clients.json,dst=/config/clients.json,readonly \
   --env CF_DNS_API_TOKEN \
-  cubesystems/acme-dns:v1.0.0
+  cubesystems/acme-dns:v1.1.0
 ```
 
 Optional environment overrides: `CLIENT_CONFIG_FILE` (default `/config/clients.json`) and `LISTEN_ADDR` (default `0.0.0.0:8080`). For Cloudflare proxying to an HTTP origin, use [Flexible mode](https://developers.cloudflare.com/ssl/origin-configuration/ssl-modes/flexible/) for this hostname only.
@@ -38,7 +38,7 @@ In namespace `dns`, create Secret `cloudflare-dns` with key `CF_DNS_API_TOKEN` c
 
 ```yaml
 image:
-  tag: "v1.0.0"
+  tag: "v1.1.0"
 cloudflare:
   existingSecret: cloudflare-dns
 config:
@@ -81,6 +81,14 @@ Challenge errors use `{"error":"<code>"}`. `409` means multiple TXT records exis
 
 Update saved Certbot renewal settings to use this hook. Verify staging issuance, scheduled renewal and certificate reloads.
 
+## Kubernetes cert-manager
+
+Install the separate [acme-dns-client Helm chart](charts/acme-dns-client/README.md) once per cluster. It uses the **same image and binary**, started with `--client-mode`, to connect cert-manager's built-in ACMEDNS solver to an existing acme-dns server. The server API stays unchanged and keeps the Cloudflare zone token. cert-manager uses only per-domain client keys.
+
+The chart can also manage the ClusterIssuer and account Secret, or connect to ones you already manage. Its README covers both configurations and installation in additional clusters using the same image and chart.
+
+To run client mode directly, set `ACME_DNS_SERVER_URL=https://acme.example.com` and start `acme-dns --client-mode`. `LISTEN_ADDR` still defaults to `0.0.0.0:8080`. Client mode does not read `CLIENT_CONFIG_FILE` or `CF_DNS_API_TOKEN`.
+
 ## Updates
 
 Stop the old container before starting its replacement; Helm handles this automatically. Configuration is read at startup. For key rotation, add the new hash, restart, switch the client, then remove the old hash and restart. Keep current credentials when reverting an image.
@@ -96,6 +104,7 @@ cargo fmt --all -- --check
 docker build -t acme-dns:local .
 python3 tests/container_smoke.py acme-dns:local
 helm lint charts/acme-dns --strict -f charts/acme-dns/ci/test-values.yaml
+helm lint charts/acme-dns-client --strict -f charts/acme-dns-client/ci/test-values.yaml
 python3 tests/helm_test.py
 ```
 

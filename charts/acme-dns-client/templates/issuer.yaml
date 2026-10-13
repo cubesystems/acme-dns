@@ -1,0 +1,27 @@
+{{- if .Values.issuer.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ required "issuer.name is required" .Values.issuer.name | quote }}
+  labels:
+    {{- include "acme-dns-client.labels" . | nindent 4 }}
+spec:
+  acme:
+    email: {{ required "issuer.email is required" .Values.issuer.email | quote }}
+    server: {{ required "issuer.server is required" .Values.issuer.server | quote }}
+    privateKeySecretRef:
+      name: {{ default (printf "%s-account" .Values.issuer.name) .Values.issuer.privateKeySecretName | quote }}
+    solvers:
+      - selector:
+          dnsNames:
+            {{- required "issuer.dnsNames is required" .Values.issuer.dnsNames | toYaml | nindent 12 }}
+        dns01:
+          acmeDNS:
+            host: {{ printf "http://%s.%s.svc:%v" (include "acme-dns-client.fullname" .) .Release.Namespace .Values.service.port | quote }}
+            accountSecretRef:
+              name: {{ required "issuer.accountSecretRef.name is required" .Values.issuer.accountSecretRef.name | quote }}
+              key: {{ required "issuer.accountSecretRef.key is required" .Values.issuer.accountSecretRef.key | quote }}
+      {{- with .Values.issuer.additionalSolvers }}
+      {{- toYaml . | nindent 6 }}
+      {{- end }}
+{{- end }}

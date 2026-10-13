@@ -1,3 +1,4 @@
+pub mod client;
 pub mod config;
 mod dns;
 
@@ -11,7 +12,7 @@ use axum::{
 };
 use config::{ClientConfig, Config};
 use dns::{Dns, DnsError};
-use serde::Deserialize;
+use serde::{Deserialize, de::DeserializeOwned};
 use serde_json::json;
 use sha2::{Digest, Sha256};
 use std::{sync::Arc, time::Duration};
@@ -80,28 +81,7 @@ async fn upsert(State(app): State<Arc<App>>, request: Request) -> Result<Respons
                 .any(|hash| bool::from(hash.as_bytes().ct_eq(digest.as_bytes())))
         })
         .ok_or(ApiError(StatusCode::UNAUTHORIZED, "unauthorized"))?;
-    let content_type = request
-        .headers()
-        .get(header::CONTENT_TYPE)
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or("");
-    if !content_type
-        .split(';')
-        .next()
-        .is_some_and(|s| s.trim().eq_ignore_ascii_case("application/json"))
-        || request.headers().contains_key(header::CONTENT_ENCODING)
-    {
-        return Err(ApiError(
-            StatusCode::UNSUPPORTED_MEDIA_TYPE,
-            "json_required",
-        ));
-    }
-    let body = tokio::time::timeout(Duration::from_secs(5), to_bytes(request.into_body(), 512))
-        .await
-        .map_err(|_| ApiError(StatusCode::REQUEST_TIMEOUT, "body_timeout"))?
-        .map_err(|_| ApiError(StatusCode::PAYLOAD_TOO_LARGE, "invalid_body"))?;
-    let challenge: Challenge = serde_json::from_slice(&body)
-        .map_err(|_| ApiError(StatusCode::BAD_REQUEST, "invalid_body"))?;
+    let challenge: Challenge = read_json(request).await?;
     if !base64url(&challenge.value) {
         return Err(ApiError(StatusCode::BAD_REQUEST, "invalid_value"));
     }
@@ -140,6 +120,30 @@ async fn upsert(State(app): State<Arc<App>>, request: Request) -> Result<Respons
         error.1
     );
     Err(error)
+}
+
+async fn read_json<T: DeserializeOwned>(request: Request) -> Result<T, ApiError> {
+    let content_type = request
+        .headers()
+        .get(header::CONTENT_TYPE)
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or("");
+    if !content_type
+        .split(';')
+        .next()
+        .is_some_and(|s| s.trim().eq_ignore_ascii_case("application/json"))
+        || request.headers().contains_key(header::CONTENT_ENCODING)
+    {
+        return Err(ApiError(
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "json_required",
+        ));
+    }
+    let body = tokio::time::timeout(Duration::from_secs(5), to_bytes(request.into_body(), 512))
+        .await
+        .map_err(|_| ApiError(StatusCode::REQUEST_TIMEOUT, "body_timeout"))?
+        .map_err(|_| ApiError(StatusCode::PAYLOAD_TOO_LARGE, "invalid_body"))?;
+    serde_json::from_slice(&body).map_err(|_| ApiError(StatusCode::BAD_REQUEST, "invalid_body"))
 }
 
 fn base64url(value: &str) -> bool {
