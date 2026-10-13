@@ -27,7 +27,9 @@ Tags starting with `v` must be `vMAJOR.MINOR.PATCH`, matching `Cargo.toml` and `
 
 ## Chart updates
 
-Once, enable **GitHub Settings → Pages → Deploy from a branch → master → / (root)**.
+Once, set **GitHub Settings → Pages → Build and deployment → Source →
+GitHub Actions**. This replaces GitHub's generated branch-deployment workflow
+with `.github/workflows/pages.yml`, using Ubuntu 26.04 and Node.js 24 actions.
 
 From the repository root:
 
@@ -47,6 +49,9 @@ From the repository root:
 
 4. Commit and push the chart, new package and `index.yaml` to `master`. Keep older packages.
 
-GitHub Pages serves `https://cubesystems.github.io/acme-dns/`. CI checks charts but does not publish them.
+GitHub Pages serves `https://cubesystems.github.io/acme-dns/`. CI checks charts.
+The Pages workflow publishes the committed `index.yaml` and `packages/*.tgz`
+when they change on `master`; it can also be run manually on `master`. It does
+not package charts or regenerate the index.
 
 Both charts use the same `cubesystems/acme-dns` image. Client mode is part of the normal Rust binary and Docker build; it has no separate image or release pipeline. Publish an image containing client mode before distributing the client chart for deployment.
