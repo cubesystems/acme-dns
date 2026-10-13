@@ -63,7 +63,9 @@ fn app(upstream: Upstream) -> Router {
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Update {
+    #[serde(alias = "SubDomain")]
     subdomain: String,
+    #[serde(alias = "Txt")]
     txt: String,
 }
 

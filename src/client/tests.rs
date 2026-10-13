@@ -165,6 +165,37 @@ async fn translates_requests_with_each_clients_own_token() {
 }
 
 #[tokio::test]
+async fn accepts_legacy_cert_manager_field_names() {
+    // goacmedns v0.1.1 (used by cert-manager v1.8) marshals untagged Go
+    // fields, producing SubDomain and Txt rather than lowercase names.
+    let h = Harness::new().await;
+    let key = "k".repeat(43);
+    let value = "A".repeat(43);
+    let response = h
+        .send(
+            Some("site-a"),
+            Some(&key),
+            "/update",
+            "application/json",
+            json!({"SubDomain":"site-a", "Txt":value}).to_string(),
+        )
+        .await;
+    assert_eq!(response.status(), 200);
+    assert_eq!(
+        serde_json::from_slice::<Value>(&to_bytes(response.into_body(), 1024).await.unwrap())
+            .unwrap(),
+        json!({"txt":value})
+    );
+    let mock = h.mock.lock().await;
+    assert_eq!(mock.calls.len(), 1);
+    let (method, uri, headers, body) = &mock.calls[0];
+    assert_eq!(*method, Method::POST);
+    assert_eq!(uri, "/v1/challenges");
+    assert_eq!(headers[header::AUTHORIZATION], format!("Bearer {key}"));
+    assert_eq!(body, &json!({"value":value}));
+}
+
+#[tokio::test]
 async fn invalid_requests_never_reach_the_server() {
     let h = Harness::new().await;
     let key = "k".repeat(43);
